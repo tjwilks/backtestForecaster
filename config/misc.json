@@ -1,0 +1,8 @@
+{
+  "AdaptiveHedgeGrid": {
+    "grid_a": {
+      "alpha": [0.9, 0.5],
+      "learning_rate": [0.5, 1]
+    }
+  }
+}

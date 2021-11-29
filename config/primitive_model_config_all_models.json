@@ -1,0 +1,35 @@
+{
+"Naive": {
+  "grid_a": {}
+},
+"SARIMA": {
+  "grid_a": {
+    "p1_auto_regressive": [
+      1,
+      2
+    ],
+    "p2_integrated": [
+      0
+    ],
+    "p3_moving_average": [
+      0
+    ]
+  },
+  "grid_b": {
+    "p1_auto_regressive": [1, 2],
+    "p2_integrated": [1],
+    "p3_moving_average": [0]
+  }
+},
+"ExponentialSmoothing": {
+  "grid_a": {
+    "p1_trend_type": [null, "add", "mul"]
+  },
+  "grid_b": {
+    "p1_trend_type": [null, "add", "mul"],
+    "p2_seasonal_period": [12],
+    "p3_seasonal_type": ["add", "mul"]
+  }
+}
+}
+
