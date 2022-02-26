@@ -5,6 +5,9 @@ from typing import Dict
 from collections import namedtuple
 import numpy as np
 import re
+from datetime import date
+from dateutil.relativedelta import relativedelta
+
 
 
 class BacktestForecaster:
@@ -13,38 +16,26 @@ class BacktestForecaster:
     """
 
     def get_windows(self):
-        final_index = self.index_lookup["numerical_date_index_lookup"].max()
-        test_index_starts = reversed(range(self.min_train_window_len, final_index))
+        final_index = self.series_data["date_index"].max()
+        first_index = self.series_data["date_index"].min()
+        test_index_starts = pd.date_range(first_index, final_index, freq="MS", inclusive="right").tolist()[::-1]
         get_horizon = lambda test_index_start: (
-            self.max_horizon if (test_index_start + self.max_horizon < final_index)
-            else final_index - test_index_start
+            test_index_start + relativedelta(months=+self.max_horizon - 1)
+            if test_index_start + relativedelta(months=+self.max_horizon) <= final_index
+            else final_index
         )
         window = namedtuple("Window", "train_index test_index")
         windows = [
             window(
-                train_index=list(range(test_index_start)),
-                test_index=list(range(test_index_start, test_index_start + get_horizon(test_index_start)))
+                train_index=pd.date_range(first_index, test_index_start, freq="MS", inclusive="left").tolist(),
+                test_index=pd.date_range(test_index_start, get_horizon(test_index_start), freq="MS").tolist()
             )
             for test_index_start in test_index_starts
         ]
+        windows = [
+            window for window in windows if len(window.train_index) >= self.min_train_window_len
+        ]
         return windows
-
-    @staticmethod
-    def get_index_lookup(series_data):
-        series_data_min_date = series_data["date_index"].min().date()
-        series_data_max_date = series_data["date_index"].max().date()
-        series_data_date_range = pd.date_range(
-            start=series_data_min_date,
-            end=series_data_max_date,
-            freq="MS",
-            closed=None
-        )
-        index = range(0, len(series_data_date_range))
-        index_lookup = pd.DataFrame({
-            "date_index_lookup": series_data_date_range,
-            "numerical_date_index_lookup": index
-        })
-        return index_lookup
 
     def get_backtest_models_and_forecasts(self):
         all_fit_models = {}
@@ -60,7 +51,10 @@ class BacktestForecaster:
             all_fit_models[series_id] = fit_models_all_windows
             backtest_forecasts.append(series_models_forecasts)
         backtest_forecasts = pd.concat(backtest_forecasts)
-        backtest_forecasts = self.post_forecast_forematting(backtest_forecasts)
+        backtest_forecasts = backtest_forecasts.sort_values(
+            by=["series_id", "date_index"],
+            ascending=False
+        )
         return all_fit_models, backtest_forecasts
 
     def get_model_forecasts_all_windows(self, tseries, windows):
@@ -68,9 +62,8 @@ class BacktestForecaster:
         models_forecasts_backtest_all_windows = []
         fit_models_all_windows = {}
         for window in windows[:max_windows]:
-            train_series = tseries.iloc[window.train_index, :]
-            test_series = tseries.iloc[window.test_index, :]
-            assert train_series["numerical_date_index"].max() + 1 == test_series["numerical_date_index"].min()
+            train_series = tseries.loc[tseries["date_index"].isin(window.train_index), :]
+            test_series = tseries.loc[tseries["date_index"].isin(window.test_index), :]
             fit_models = self.get_fit_models(
                 train_series
             )
@@ -78,7 +71,7 @@ class BacktestForecaster:
                 fit_models,
                 test_series
             )
-            fit_models_all_windows[test_series["numerical_date_index"].min()] = fit_models
+            fit_models_all_windows[test_series["date_index"].min()] = fit_models
             models_forecasts_backtest_all_windows.append(models_backtest_window)
         models_forecasts_backtest_all_windows = pd.concat(models_forecasts_backtest_all_windows)
         return fit_models_all_windows, models_forecasts_backtest_all_windows
@@ -90,6 +83,7 @@ class BacktestForecaster:
     @abstractmethod
     def get_forecasts_all_models(self, train_series, test_series):
         pass
+
 
     def post_forecast_forematting(self, backtest_forecasts):
         backtest_forecasts = self.replace_numerical_with_dates(
@@ -158,8 +152,6 @@ class PrimitiveModelBacktestForecaster(BacktestForecaster):
             max_windows=30
     ):
         self.series_data = series_data
-        self.index_lookup = self.get_index_lookup(self.series_data)
-        self.series_data = self.replace_dates_with_numerical(self.series_data, "date_index")
         self.max_horizon = max_horizon
         self.min_train_window_len = min_train_window_len
         self.max_windows = max_windows
@@ -186,8 +178,7 @@ class PrimitiveModelBacktestForecaster(BacktestForecaster):
         """
         y_test = np.array(test_series["actuals"], dtype=np.float64)
         primitive_model_forecasts = dict()
-        primitive_model_forecasts["numerical_predict_from"] = test_series["numerical_date_index"].max()
-        primitive_model_forecasts["numerical_date_index"] = test_series["numerical_date_index"]
+        primitive_model_forecasts["date_index"] = test_series["date_index"].max()
         primitive_model_forecasts["actuals"] = y_test
         for primitive_model_name, primitive_model in self.models.copy().items():
             forecast = primitive_model.predict(h=len(test_series))
@@ -208,9 +199,6 @@ class CombinerBacktestForecaster(BacktestForecaster):
             horizon_length: int = 1
     ):
 
-        # replace date columns with numerical
-        self.index_lookup = self.get_index_lookup(forecast_data)
-        forecast_data = self.replace_dates_with_numerical(forecast_data, ["predict_from", "date_index"])
         self.series_data = self._handle_horizons(forecast_data, horizon_length)
         self.models = models
         self.max_horizon = max_horizon
@@ -229,8 +217,7 @@ class CombinerBacktestForecaster(BacktestForecaster):
         :returns: predictions and actuals of backtest
         """
         X_train = train_series.drop(
-            columns=["numerical_predict_from", "numerical_date_index",
-                     "actuals", "series_id"]).apply(pd.to_numeric)
+            columns=["predict_from", "actuals", "series_id"]).apply(pd.to_numeric)
         y_train = train_series["actuals"]
         fit_models = dict()
         for combiner_model_name, combiner_model in self.models.copy().items():
@@ -254,13 +241,11 @@ class CombinerBacktestForecaster(BacktestForecaster):
         """
         # Check test set starts 1 point on from train set
         X_test = test_series.drop(
-            columns=["numerical_predict_from", "numerical_date_index",
-                     "actuals", "series_id"]).apply(pd.to_numeric)
-        y_test = test_series["actuals"]
+            columns=["predict_from", "actuals", "series_id"]).apply(pd.to_numeric)
         combiner_forecasts = dict()
-        combiner_forecasts["numerical_predict_from"] = test_series["numerical_date_index"].min()
-        combiner_forecasts["numerical_date_index"] = test_series["numerical_date_index"]
-        combiner_forecasts["actuals"] = y_test
+        combiner_forecasts["predict_from"] = test_series["predict_from"].min()
+        combiner_forecasts["date_index"] = test_series["date_index"].min()
+        combiner_forecasts["actuals"] = test_series["actuals"]
         for combiner_model_name, combiner_model in fit_models.copy().items():
             forecast = combiner_model.predict(x=X_test)
             combiner_forecasts[combiner_model_name] = forecast
@@ -270,23 +255,14 @@ class CombinerBacktestForecaster(BacktestForecaster):
     @staticmethod
     def _handle_horizons(forecast_data, horizon_length):
         forecast_data["horizon"] = (
-                forecast_data["numerical_predict_from"] - forecast_data["numerical_date_index"] + 1
-        )
+                (forecast_data['date_index'] - forecast_data['predict_from'])/np.timedelta64(1, 'M')
+        ).astype(int) + 1
         forecast_data = forecast_data[forecast_data["horizon"] == horizon_length]
-        forecast_data = forecast_data.drop(["numerical_date_index", "horizon"], axis=1)
+        forecast_data = forecast_data.drop(["date_index", "horizon"], axis=1)
         series_data = forecast_data.groupby(
-            by=["series_id", "numerical_predict_from"],
+            by=["series_id", "predict_from"],
             as_index=False).sum()
-        min_numerical_predict_from = series_data.groupby(
-            by="series_id")["numerical_predict_from"].min("numerical_predict_from")
-        min_numerical_predict_from.name = "min_numerical_predict_from"
-        series_data = series_data.merge(
-            right=min_numerical_predict_from, on="series_id", how="inner"
-        )
-        series_data["numerical_date_index"] = (
-                series_data["numerical_predict_from"] - series_data["min_numerical_predict_from"] + 1
-        )
-        series_data = series_data.drop("min_numerical_predict_from", axis=1)
+        series_data["date_index"] = series_data["predict_from"]
         return series_data
 
     def get_primitive_model_weights_all_combiners(self, all_fit_models):
@@ -297,8 +273,7 @@ class CombinerBacktestForecaster(BacktestForecaster):
                 for combiner_model_name, combiner_model in fit_models.items():
                     model_weights = combiner_model.get_weights()
                     primitive_model_names = self.series_data.drop(
-                        labels=["series_id", "numerical_predict_from",
-                                "numerical_date_index", "actuals"],
+                        labels=["series_id", "predict_from", "actuals"],
                         axis=1
                     ).columns
                     weights_data = {
@@ -313,8 +288,4 @@ class CombinerBacktestForecaster(BacktestForecaster):
                     weights_datasets.append(weights_data)
                     index_n += 1
         primitive_model_weights_all_combiners = pd.concat(weights_datasets)
-        primitive_model_weights_all_combiners = self.replace_numerical_with_dates(
-            data=primitive_model_weights_all_combiners,
-            numerical_col="predict_from"
-        )
         return primitive_model_weights_all_combiners
