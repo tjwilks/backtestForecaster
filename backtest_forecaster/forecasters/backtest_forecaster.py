@@ -84,41 +84,6 @@ class BacktestForecaster:
     def get_forecasts_all_models(self, train_series, test_series):
         pass
 
-
-    def post_forecast_forematting(self, backtest_forecasts):
-        backtest_forecasts = self.replace_numerical_with_dates(
-            data=backtest_forecasts,
-            numerical_col="numerical_predict_from"
-        )
-        backtest_forecasts = self.replace_numerical_with_dates(
-            data=backtest_forecasts,
-            numerical_col="numerical_date_index"
-        )
-        backtest_forecasts = backtest_forecasts.sort_values(
-            by=["series_id", "predict_from", "date_index"],
-            ascending=False
-        )
-        return backtest_forecasts
-
-    def replace_dates_with_numerical(self, data, columns_to_replace):
-        columns_to_replace = [columns_to_replace] if type(columns_to_replace) == str else columns_to_replace
-        for column in columns_to_replace:
-            data = data.set_index(column).join(
-                other=self.index_lookup.set_index("date_index_lookup")
-            ).reset_index(drop=True)
-            data = data.rename({"numerical_date_index_lookup": f"numerical_{column}"}, axis=1)
-        numerical_columns = [f"numerical_{column}" for column in columns_to_replace]
-        data = data.sort_values(by=["series_id"] + numerical_columns, ascending=False)
-        return data
-
-    def replace_numerical_with_dates(self, data, numerical_col):
-        data = data.set_index(numerical_col).join(
-            other=self.index_lookup.set_index("numerical_date_index_lookup")
-        ).reset_index(drop=True)
-        data[re.sub("^numerical_", "", numerical_col)] = data["date_index_lookup"]
-        data = data.drop("date_index_lookup", axis=1)
-        return data
-
     def get_hyp_param_df(self):
         model_names = self.models.keys()
         hyp_params = {
