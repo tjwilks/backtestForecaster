@@ -84,27 +84,6 @@ class BacktestForecaster:
     def get_forecasts_all_models(self, train_series, test_series):
         pass
 
-    def get_hyp_param_df(self):
-        model_names = self.models.keys()
-        hyp_params = {
-            model_name: model_name.split("--")
-            for model_name in model_names
-        }
-        hyp_params_datasets = []
-        for model_name, hyp_params in hyp_params.items():
-            algo_name = hyp_params[0].split("--")[0]
-            hyp_params = [
-                f"{algo_name}-{re.sub(r'^p[0-9]{1}_', '', hyp_param)}" for hyp_param in hyp_params
-            ][1:]
-            hyp_params = {
-                hyp_param.split(":")[0] : hyp_param.split(":")[1]
-                for hyp_param in hyp_params
-            }
-            hyp_params = pd.DataFrame(hyp_params, index=[model_name])
-            hyp_params_datasets.append(hyp_params)
-        hyp_param_df = pd.concat(hyp_params_datasets)
-        return hyp_param_df
-
 
 class PrimitiveModelBacktestForecaster(BacktestForecaster):
 
@@ -229,28 +208,3 @@ class CombinerBacktestForecaster(BacktestForecaster):
             as_index=False).sum()
         series_data["date_index"] = series_data["predict_from"]
         return series_data
-
-    def get_primitive_model_weights_all_combiners(self, all_fit_models):
-        weights_datasets = []
-        index_n = 0
-        for series_id, fit_models_all_windows in all_fit_models.items():
-            for predict_from, fit_models in fit_models_all_windows.items():
-                for combiner_model_name, combiner_model in fit_models.items():
-                    model_weights = combiner_model.get_weights()
-                    primitive_model_names = self.series_data.drop(
-                        labels=["series_id", "predict_from", "actuals"],
-                        axis=1
-                    ).columns
-                    weights_data = {
-                        primitive_model_name: model_weight
-                        for primitive_model_name, model_weight
-                        in zip(primitive_model_names, model_weights)
-                    }
-                    weights_data = pd.DataFrame(weights_data, index=[index_n])
-                    weights_data["combiner_model_name"] = combiner_model_name
-                    weights_data["predict_from"] = predict_from
-                    weights_data["series_id"] = series_id
-                    weights_datasets.append(weights_data)
-                    index_n += 1
-        primitive_model_weights_all_combiners = pd.concat(weights_datasets)
-        return primitive_model_weights_all_combiners
