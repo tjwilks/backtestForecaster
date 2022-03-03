@@ -1,3 +1,4 @@
+import tensorflow as tf
 import pandas as pd
 import configparser
 import sys
@@ -6,6 +7,7 @@ from datetime import datetime
 
 from backtest_forecaster.model_loaders.primitive_model_loader import load_models
 from backtest_forecaster.forecasters.backtest_forecaster import CombinerBacktestForecaster
+from backtest_forecaster.utils import model_info_extrator
 
 
 def main():
@@ -33,13 +35,20 @@ def main():
         horizon_length=1
     )
     all_fit_models, combiner_forecasts = combiner_backtest_forecaster.get_backtest_models_and_forecasts()
-    primitive_model_weights = combiner_backtest_forecaster.get_primitive_model_weights_all_combiners(all_fit_models)
-    print(primitive_model_weights)
-    # get_hyp_param_df = combiner_backtest_forecaster.get_hyp_param_df()
+    primitive_model_names = primitive_model_backtest_forecasts.drop(
+        labels=["series_id", "predict_from", "actuals"],
+        axis=1
+    ).columns
+    primitive_model_weights = model_info_extrator.get_primitive_model_weights_all_combiners(
+        all_fit_models,
+        primitive_model_names
+    )
+    hyp_param_df = model_info_extrator.get_hyp_param_df(combiners)
     # combiner_forecasts.to_csv(local_data_paths["combiner_backtest_forecasts_path"])
-    primitive_model_weights.to_csv("examples/example_data/example_primitive_model_weights.csv")
+    # primitive_model_weights.to_csv("examples/example_data/example_primitive_model_weights.csv")
     # get_hyp_param_df.to_csv("examples/example_data/example_hyp_param_df.csv")
 
 
 if __name__ == '__main__':
-    main()
+    with tf.device('/cpu:0'):
+        main()

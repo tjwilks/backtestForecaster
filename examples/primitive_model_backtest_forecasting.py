@@ -6,6 +6,7 @@ from datetime import datetime
 
 from backtest_forecaster.model_loaders.primitive_model_loader import load_models
 from backtest_forecaster.forecasters.backtest_forecaster import PrimitiveModelBacktestForecaster
+from backtest_forecaster.utils import model_info_extrator
 
 
 def main():
@@ -33,7 +34,7 @@ def main():
         max_windows=13,
     )
     all_primitive_models, primitive_model_forecasts = backtest_forecaster.get_backtest_models_and_forecasts()
-    get_hyp_param_df = backtest_forecaster.get_hyp_param_df()
+    get_hyp_param_df = model_info_extrator.get_hyp_param_df(primitive_models)
     print(get_hyp_param_df)
     # primitive_model_forecasts.to_csv(local_data_paths["primitive_model_backtest_forecasts_path"])
     # get_hyp_param_df.to_csv("examples/example_data/example_hyp_param_df.csv")
