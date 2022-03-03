@@ -2,7 +2,7 @@ from abc import abstractmethod, ABC
 import pandas as pd
 from backtest_forecaster.models.primitive_models import AbstractPrimitiveModel
 from weighted_forecast_combiner.forecast_combiner import OptimalForecastCombiner
-from typing import Dict, Optional
+from typing import Dict, Union
 from collections import namedtuple
 import numpy as np
 import re
@@ -35,7 +35,7 @@ class AbstractBacktestForecaster(ABC):
     @abstractmethod
     def _get_forecasts_all_models(
             self,
-            fit_models: Dict[str: Optional[AbstractPrimitiveModel, OptimalForecastCombiner]],
+            fit_models: Dict[str, Union[AbstractPrimitiveModel, OptimalForecastCombiner]],
             test_series: pd.DatetimeIndex
     ):
         """
@@ -136,7 +136,7 @@ class PrimitiveModelBacktestForecaster(AbstractBacktestForecaster):
     def __init__(
             self,
             time_series_data: pd.DataFrame,
-            models: Dict[str: AbstractPrimitiveModel],
+            models: Dict[str, AbstractPrimitiveModel],
             max_horizon: int = 12,
             min_train_window_len: int = 12,
             max_windows=30
@@ -181,7 +181,7 @@ class PrimitiveModelBacktestForecaster(AbstractBacktestForecaster):
 
     def _get_forecasts_all_models(
             self,
-            fit_models: Dict[str: AbstractPrimitiveModel],
+            fit_models: Dict[str, AbstractPrimitiveModel],
             test_series: pd.DatetimeIndex
     ):
         """
@@ -219,7 +219,7 @@ class CombinerBacktestForecaster(AbstractBacktestForecaster):
     def __init__(
             self,
             forecast_data: pd.DataFrame,
-            models: Dict[str: OptimalForecastCombiner],
+            models: Dict[str, OptimalForecastCombiner],
             max_horizon: int = 12,
             min_train_window_len: int = 12,
             max_windows: int = 30,
@@ -273,7 +273,7 @@ class CombinerBacktestForecaster(AbstractBacktestForecaster):
 
     def _get_forecasts_all_models(
             self,
-            fit_models: Dict[str: OptimalForecastCombiner],
+            fit_models: Dict[str, OptimalForecastCombiner],
             test_series: pd.DatetimeIndex
     ):
         """
