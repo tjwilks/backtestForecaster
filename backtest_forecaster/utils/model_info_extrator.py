@@ -3,6 +3,18 @@ import re
 
 
 def get_primitive_model_weights_all_combiners(fit_combiners, primitive_model_names):
+    """
+    Unpacks fit_combiners to dataset containing weights given to each primitive
+    model by each combiner
+
+    :param fit_combiners: combiner objects with weights data for all primitive models
+    for all series id
+    :param primitive_model_names: names of primitive model that combiner has
+    assigned weights to
+    :return primitive_model_weights: dataset of all primitive model weights
+    for all time series for all combiners
+    """
+
     weights_datasets = []
     index_n = 0
     for series_id, fit_combiners_all_windows in fit_combiners.items():
@@ -25,6 +37,15 @@ def get_primitive_model_weights_all_combiners(fit_combiners, primitive_model_nam
 
 
 def get_hyp_param_df(models):
+    """
+    Unpacks model names contained as keys in models into dataset specifying
+    hyper-parameters configuration of each model
+
+    :param models: dictionary containing all primitive models and equivalent
+    model names
+    :return hyp_param_df: dataset specifying hyperparameter configurations
+    of all models
+    """
     model_names = models.keys()
     hyp_params = {
         model_name: model_name.split("--")
