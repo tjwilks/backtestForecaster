@@ -1,8 +1,17 @@
 import pandas as pd
 import re
+from typing import Dict, List, Union
+from weighted_forecast_combiner.forecast_combiner import OptimalForecastCombiner as ForecastCombiner
+from backtest_forecaster.models.primitive_models import AbstractPrimitiveModel
 
 
-def get_primitive_model_weights_all_combiners(fit_combiners, primitive_model_names):
+def get_primitive_model_weights_all_combiners(
+        fit_combiners: Dict[str,
+                            Dict[str,
+                                 Dict[str,
+                                      Union[AbstractPrimitiveModel, ForecastCombiner]]]],
+        primitive_model_names: List[str]
+        ) -> pd.DataFrame:
     """
     Unpacks fit_combiners to dataset containing weights given to each primitive
     model by each combiner
@@ -36,7 +45,9 @@ def get_primitive_model_weights_all_combiners(fit_combiners, primitive_model_nam
     return primitive_model_weights_all_combiners
 
 
-def get_hyp_param_df(models):
+def get_hyp_param_df(
+        models: Dict[str, List[str]]
+        ) -> pd.DataFrame:
     """
     Unpacks model names contained as keys in models into dataset specifying
     hyper-parameters configuration of each model

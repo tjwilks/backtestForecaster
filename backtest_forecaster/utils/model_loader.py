@@ -1,11 +1,14 @@
 from sklearn.model_selection import ParameterGrid
-from backtest_forecaster.models.primitive_models import Naive, SARIMA, ExponentialSmoothing
+from backtest_forecaster.models.primitive_models import AbstractPrimitiveModel, Naive, SARIMA, ExponentialSmoothing
 from weighted_forecast_combiner.forecast_combiner import OptimalForecastCombiner as ForecastCombiner
 import inspect
 import re
+from typing import Dict, Union, List
 
 
-def load_models(model_config_grids):
+def load_models(
+        model_config_grids: Dict[str, Dict[str, Union[str, int, float]]]
+        ) -> Dict[str, Union[AbstractPrimitiveModel, ForecastCombiner]]:
     """
     Unpacks model hyper-parameter grids specified in model_config
     into dictionary of all configs
@@ -27,7 +30,10 @@ def load_models(model_config_grids):
     return all_models
 
 
-def get_model_name(model_name, model_config):
+def get_model_name(
+        model_name: str,
+        model_config: Dict[str, Union[str, int, float]]
+       ) -> str:
     """
     Appends model config information to model name to return
     a new model name
@@ -43,7 +49,10 @@ def get_model_name(model_name, model_config):
     return model_name
 
 
-def get_model(model_name, model_config):
+def get_model(
+        model_name: str,
+        model_config: Dict[str, Union[str, int, float]]
+       ) -> Union[AbstractPrimitiveModel, ForecastCombiner]:
     """
     Initialises model with model name using arguments
     specified as values in model_config
@@ -66,13 +75,16 @@ def get_model(model_name, model_config):
     return model
 
 
-def check_arguments(provided_arguments, model):
+def check_arguments(
+        provided_arguments: List[str],
+        model: Union[AbstractPrimitiveModel, ForecastCombiner]
+        ) -> None:
     """
     Checks arguments are the same as those required by model
 
     :param provided_arguments: intended hyper-parameter configuration of
     model
-    :model model: initialised model with hyper-parameter configuration
+    :param model: initialised model with hyper-parameter configuration
     that is meant to be equivalent to provided arguments
     """
     model_init_arguments = list(inspect.signature(model.__init__).parameters.keys())
