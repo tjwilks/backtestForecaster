@@ -91,6 +91,12 @@ class AbstractBacktestForecaster(ABC):
             if test_index_start + relativedelta(months=+self.max_horizon) <= final_index
             else final_index
         )
+        get_train_index_start = lambda test_index_start: (
+            test_index_start - relativedelta(months=+self.max_train_window_len)
+            if (len(pd.date_range(first_index, test_index_start, freq="MS", inclusive="left").tolist())
+                > self.max_train_window_len)
+            else first_index
+        )
         window = namedtuple("Window", "train_index test_index")
         windows = [
             window(
@@ -140,6 +146,7 @@ class PrimitiveModelBacktestForecaster(AbstractBacktestForecaster):
             time_series_data: pd.DataFrame,
             models: Dict[str, AbstractPrimitiveModel],
             max_horizon: int = 12,
+            max_train_window_len: int = 12,
             min_train_window_len: int = 12,
             max_windows=30
     ):
@@ -151,12 +158,15 @@ class PrimitiveModelBacktestForecaster(AbstractBacktestForecaster):
         :param max_horizon: maximum horizon to forecast primitive models to
         :param min_train_window_len: minimum length of training data required
         for window to be used
+        :param max_train_window_len: maximum length of training data to be used
+        for every window
         :param max_windows: maximum number of backtest windows to collect
         primitive model forecasts for
         """
         self.time_series_data = time_series_data
         self.max_horizon = max_horizon
         self.min_train_window_len = min_train_window_len
+        self.max_train_window_len = max_train_window_len
         self.max_windows = max_windows
         self.windows = self._get_windows()
         self.models = models
@@ -224,6 +234,7 @@ class CombinerBacktestForecaster(AbstractBacktestForecaster):
             models: Dict[str, OptimalForecastCombiner],
             max_horizon: int = 12,
             min_train_window_len: int = 12,
+            max_train_window_len: int = 12,
             max_windows: int = 30,
             horizon_length: int = 1
     ):
@@ -235,6 +246,8 @@ class CombinerBacktestForecaster(AbstractBacktestForecaster):
         :param max_horizon: maximum horizon to forecast primitive models to
         :param min_train_window_len: minimum length of training data required
         for window to be used
+        :param max_train_window_len: maximum length of training data to be used
+        for every window
         :param max_windows: maximum number of backtest windows to collect
         primitive model forecasts for
         :param horizon_length: length of horizon of forecasts to use to
@@ -244,6 +257,7 @@ class CombinerBacktestForecaster(AbstractBacktestForecaster):
         self.models = models
         self.max_horizon = max_horizon
         self.min_train_window_len = min_train_window_len
+        self.max_train_window_len = max_train_window_len
         self.windows = self._get_windows()
         self.max_windows = max_windows
 
