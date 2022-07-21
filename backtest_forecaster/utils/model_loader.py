@@ -1,6 +1,7 @@
 from sklearn.model_selection import ParameterGrid
 from backtest_forecaster.models.primitive_models import AbstractPrimitiveModel, Naive, SARIMA, ExponentialSmoothing
 from weighted_forecast_combiner.forecast_combiner import OptimalForecastCombiner as ForecastCombiner
+from backtest_forecaster.models.combiner_models import AdaptiveHedge, FollowTheLeader
 import inspect
 import re
 from typing import Dict, Union, List
