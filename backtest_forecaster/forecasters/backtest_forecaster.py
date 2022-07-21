@@ -315,11 +315,13 @@ class CombinerBacktestForecaster(AbstractBacktestForecaster):
         test period of a single backtest window of a single time
         series
         """
+        first_predict_from = test_series["predict_from"].tolist()[0]
+        test_series = test_series[test_series["predict_from"] == first_predict_from]
         X_test = test_series.drop(
-            columns=["predict_from", "actuals", "series_id"]).apply(pd.to_numeric)
+            columns=["predict_from", "date_index", "actuals", "series_id"]).apply(pd.to_numeric)
         combiner_forecasts = dict()
         combiner_forecasts["predict_from"] = test_series["predict_from"].min()
-        combiner_forecasts["date_index"] = test_series["date_index"].min()
+        combiner_forecasts["date_index"] = test_series["date_index"]
         combiner_forecasts["actuals"] = test_series["actuals"]
         for combiner_model_name, combiner_model in fit_models.copy().items():
             forecast = combiner_model.predict(x=X_test)
