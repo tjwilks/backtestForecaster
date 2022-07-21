@@ -285,15 +285,13 @@ class CombinerBacktestForecaster(AbstractBacktestForecaster):
         :returns fit_models: combiner models fit to training data
         """
         X_train = train_series.drop(
-            columns=["predict_from", "actuals", "series_id"]).apply(pd.to_numeric)
+            columns=["predict_from", "date_index", "actuals", "series_id"]).apply(pd.to_numeric)
         y_train = train_series["actuals"]
         fit_models = dict()
         for combiner_model_name, combiner_model in self.models.copy().items():
             combiner_model = copy.copy(combiner_model)
             combiner_model.fit(
                 x=X_train,
-                y=y_train,
-                epochs=100
             )
             fit_models[combiner_model_name] = combiner_model
         return fit_models
