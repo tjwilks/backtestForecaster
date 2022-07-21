@@ -4,9 +4,8 @@ import sys
 import json
 from datetime import datetime
 
-from backtest_forecaster.model_loaders.primitive_model_loader import load_models
 from backtest_forecaster.forecasters.backtest_forecaster import PrimitiveModelBacktestForecaster
-from backtest_forecaster.utils import model_info_extrator
+from backtest_forecaster.utils import model_loader, model_info_extrator
 
 
 def main():
@@ -26,9 +25,9 @@ def main():
     loader_config_path = config["loader_config_path"]
     with open(loader_config_path["primitive_model_config_path"], 'r') as j:
         primitive_model_config = json.loads(j.read())
-    primitive_models = load_models(primitive_model_config)
+    primitive_models = model_loader.load_models(primitive_model_config)
     backtest_forecaster = PrimitiveModelBacktestForecaster(
-        series_data=time_series_data,
+        time_series_data=time_series_data,
         models=primitive_models,
         min_train_window_len=1,
         max_windows=13,

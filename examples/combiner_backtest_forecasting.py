@@ -5,9 +5,8 @@ import sys
 import json
 from datetime import datetime
 
-from backtest_forecaster.model_loaders.primitive_model_loader import load_models
 from backtest_forecaster.forecasters.backtest_forecaster import CombinerBacktestForecaster
-from backtest_forecaster.utils import model_info_extrator
+from backtest_forecaster.utils import model_loader, model_info_extrator
 
 
 def main():
@@ -26,7 +25,7 @@ def main():
     loader_config_path = config["loader_config_path"]
     with open(loader_config_path["combiner_loader_config_path"], 'r') as j:
         combiner_loader_config = json.loads(j.read())
-    combiners = load_models(combiner_loader_config)
+    combiners = model_loader.load_models(combiner_loader_config)
     combiner_backtest_forecaster = CombinerBacktestForecaster(
         forecast_data=primitive_model_backtest_forecasts,
         models=combiners,
