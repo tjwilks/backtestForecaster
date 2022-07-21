@@ -8,6 +8,7 @@ import numpy as np
 import re
 from datetime import date
 from dateutil.relativedelta import relativedelta
+import copy
 
 
 class AbstractBacktestForecaster(ABC):
@@ -288,6 +289,7 @@ class CombinerBacktestForecaster(AbstractBacktestForecaster):
         y_train = train_series["actuals"]
         fit_models = dict()
         for combiner_model_name, combiner_model in self.models.copy().items():
+            combiner_model = copy.copy(combiner_model)
             combiner_model.fit(
                 x=X_train,
                 y=y_train,
