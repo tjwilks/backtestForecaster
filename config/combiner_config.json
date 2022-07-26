@@ -1,10 +1,12 @@
 {
-  "ForecastCombiner": {
+  "AdaptiveHedge": {
     "grid_a": {
-      "p1_lmbda": [0.1, 1.0, 3.0],
-      "p2_alpha": [0.1],
-      "p3_multiplyer": [1000000000],
-      "p4_regularization_type": ["ridge"]
+      "p1_alpha": [0.1],
+      "p3_multiplier": [1]
+    }
+  },
+   "FollowTheLeader": {
+    "grid_a": {
     }
   }
 }

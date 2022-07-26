@@ -15,7 +15,7 @@ def main():
     config.read(config_file_path)
 
     local_data_paths = config["local_data_paths"]
-    custom_date_parser = lambda date: datetime.strptime(date, "%d/%m/%Y")
+    custom_date_parser = lambda date: datetime.strptime(date, "%Y-%m-%d")
     primitive_model_backtest_forecasts = pd.read_csv(
         filepath_or_buffer=local_data_paths["primitive_model_backtest_forecasts_path"],
         index_col=0,
@@ -29,9 +29,11 @@ def main():
     combiner_backtest_forecaster = CombinerBacktestForecaster(
         forecast_data=primitive_model_backtest_forecasts,
         models=combiners,
-        min_train_window_len=2,
-        max_windows=2,
-        horizon_length=1
+        max_train_window_len=12,
+        min_train_window_len=1,
+        max_windows=12,
+        horizon_length=1,
+        max_horizon=1
     )
     all_fit_models, combiner_forecasts = combiner_backtest_forecaster.get_backtest_models_and_forecasts()
     primitive_model_names = primitive_model_backtest_forecasts.drop(
@@ -43,9 +45,9 @@ def main():
         primitive_model_names
     )
     hyp_param_df = model_info_extrator.get_hyp_param_df(combiners)
-    # combiner_forecasts.to_csv(local_data_paths["combiner_backtest_forecasts_path"])
-    # primitive_model_weights.to_csv("examples/example_data/example_primitive_model_weights.csv")
-    # get_hyp_param_df.to_csv("examples/example_data/example_hyp_param_df.csv")
+    combiner_forecasts.to_csv(local_data_paths["combiner_backtest_forecasts_path"])
+    primitive_model_weights.to_csv("examples/example_data/example_primitive_model_weights.csv")
+    get_hyp_param_df.to_csv("examples/example_data/example_hyp_param_df.csv")
 
 
 if __name__ == '__main__':
