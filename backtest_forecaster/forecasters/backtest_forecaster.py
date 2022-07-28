@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABC
 import pandas as pd
 from backtest_forecaster.models.primitive_models import AbstractPrimitiveModel
-from weighted_forecast_combiner.forecast_combiner import OptimalForecastCombiner
+from backtest_forecaster.models.combiner_models import AbstractCombinerModel
 from typing import Dict, Union, Tuple, List
 from collections import namedtuple
 import numpy as np
@@ -22,7 +22,7 @@ class AbstractBacktestForecaster(ABC):
     def _get_fit_models(
             self,
             train_series: pd.DatetimeIndex
-    ) -> Dict[str, Union[AbstractPrimitiveModel, OptimalForecastCombiner]]:
+    ) -> Dict[str, Union[AbstractPrimitiveModel, AbstractCombinerModel]]:
         """
         Fits all models to training data of a single period
         of a single time series
@@ -36,7 +36,7 @@ class AbstractBacktestForecaster(ABC):
     @abstractmethod
     def _get_forecasts_all_models(
             self,
-            fit_models: Dict[str, Union[AbstractPrimitiveModel, OptimalForecastCombiner]],
+            fit_models: Dict[str, Union[AbstractPrimitiveModel, AbstractCombinerModel]],
             test_series: pd.DatetimeIndex
     ) -> pd.DataFrame:
         """
@@ -55,7 +55,7 @@ class AbstractBacktestForecaster(ABC):
         """
 
     def get_backtest_models_and_forecasts(self) -> Tuple[
-        Dict[str, Dict[pd.Timestamp, Dict[str, Union[AbstractPrimitiveModel, OptimalForecastCombiner]]]],
+        Dict[str, Dict[pd.Timestamp, Dict[str, Union[AbstractPrimitiveModel, AbstractCombinerModel]]]],
             pd.DataFrame]:
         """
         Produces forecasts for all models, for all periods within all
@@ -115,7 +115,7 @@ class AbstractBacktestForecaster(ABC):
     def _get_model_forecasts_all_windows(
             self,
             time_series: pd.DatetimeIndex
-    ) -> Tuple[Dict[pd.Timestamp, Dict[str, Union[AbstractPrimitiveModel, OptimalForecastCombiner]]], pd.DataFrame]:
+    ) -> Tuple[Dict[pd.Timestamp, Dict[str, Union[AbstractPrimitiveModel, AbstractCombinerModel]]], pd.DataFrame]:
         """
         Produces forecasts for all models for periods specified for a
         single time series
@@ -239,7 +239,7 @@ class CombinerBacktestForecaster(AbstractBacktestForecaster):
     def __init__(
             self,
             forecast_data: pd.DataFrame,
-            models: Dict[str, OptimalForecastCombiner],
+            models: Dict[str, AbstractCombinerModel],
             max_horizon: int = 12,
             min_train_window_len: int = 12,
             max_train_window_len: int = 12,
@@ -274,7 +274,7 @@ class CombinerBacktestForecaster(AbstractBacktestForecaster):
     def _get_fit_models(
             self,
             train_series: pd.DatetimeIndex
-    ) -> Dict[str, OptimalForecastCombiner]:
+    ) -> Dict[str, AbstractCombinerModel]:
         """
         Fits all combiner models to training data of a single period
         of a single time series
@@ -298,7 +298,7 @@ class CombinerBacktestForecaster(AbstractBacktestForecaster):
 
     def _get_forecasts_all_models(
             self,
-            fit_models: Dict[str, OptimalForecastCombiner],
+            fit_models: Dict[str, AbstractCombinerModel],
             test_series: pd.DatetimeIndex
     ) -> pd.DataFrame:
         """

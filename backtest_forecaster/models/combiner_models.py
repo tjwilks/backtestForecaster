@@ -3,6 +3,34 @@ import pandas as pd
 from decimal import Decimal
 import math
 from sklearn import preprocessing
+from abc import ABC, abstractmethod
+
+
+class AbstractCombinerModel(ABC):
+
+    @abstractmethod
+    def fit(self, x):
+        """
+        Fit the method to error data x
+
+        :param x: primitive model error data
+        """
+
+    @abstractmethod
+    def predict(self, x):
+        """
+        Predict by combining together forecast data x
+
+        :param x: primitive model forecast data
+        """
+
+    @abstractmethod
+    def get_weights(self):
+        """
+        Get weights from combiner fitting
+
+        :param x: primitive model forecast data
+        """
 
 
 class AdaptiveHedge:
@@ -29,11 +57,6 @@ class AdaptiveHedge:
         max_exp_loss_model = [model for model, exp_loss in exp_losses.items() if exp_loss == max_exp_loss][0]
         max_weight = max(self.weights.values())
         max_weight_model = [model for model, weight in self.weights.items() if weight == max_weight][0]
-        print(f"min exp loss model: {max_exp_loss_model} vs max weight model: {max_weight_model}")
-        if max_weight_model != max_exp_loss_model:
-            print(exp_decay)
-            for model in exp_losses.keys():
-                print(f"weight: {self.weights[model]}, exp_loss: {exp_losses[model]}, sum loss: {sum_losses[model]}, model: {model}")
         assert max_weight_model == max_exp_loss_model, f"{exp_losses}, \n {self.weights}"
         self.is_fit = True
 
@@ -63,7 +86,6 @@ class FollowTheLeader:
         min_error = min(model_errors.values())
         weights = {model: (1 if error == min_error else 0) for model, error in model_errors.items()}
         min_models = [model for model, weight in weights.items() if weight == 1]
-        print(min_models)
         self.weights = {model: (1 if model == min_models[0] else 0) for model, weight in weights.items()}
         self.is_fit = True
 
