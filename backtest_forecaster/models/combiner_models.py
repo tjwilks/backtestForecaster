@@ -28,12 +28,10 @@ class AbstractCombinerModel(ABC):
     def get_weights(self):
         """
         Get weights from combiner fitting
-
-        :param x: primitive model forecast data
         """
 
 
-class AdaptiveHedge:
+class AdaptiveHedge(AbstractCombinerModel):
 
     def __init__(self, alpha, multiplier):
         self.alpha = alpha
@@ -71,7 +69,7 @@ class AdaptiveHedge:
             raise ValueError("Method has not been fit to data yet")
 
 
-class FollowTheLeader:
+class FollowTheLeader(AbstractCombinerModel):
 
     def __init__(self):
         pass
@@ -98,14 +96,3 @@ class FollowTheLeader:
             return np.array(list(self.weights.values()))
         else:
             raise ValueError("Method has not been fit to data yet")
-
-
-# x_train = pd.DataFrame({"m1": [2, 2, 2], "m2": [3, 3, 3],"m3": [2, 3, 3],"m4": [3, 3, 4],"m5": [0, 0, 1]})
-# y_train = pd.Series([2.5, 2.5, 2.5])
-# x_test = pd.DataFrame({"m1": [1, 1, 1], "m2": [1.5, 1.5, 1.5], "m3": [2, 3, 3], "m4": [3, 3, 4], "m5": [0, 0, 1]})
-# y_test = pd.Series([1.25, 1.25, 1.25])
-# followTheLeader = FollowTheLeader()
-# followTheLeader.fit(x=x_train, y=y_train)
-# print(followTheLeader.get_weights())
-# followTheLeader_forecast = followTheLeader.predict(x=x_test)
-# print(followTheLeader_forecast)
