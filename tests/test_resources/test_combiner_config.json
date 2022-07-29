@@ -1,0 +1,12 @@
+{
+  "AdaptiveHedge": {
+    "grid_a": {
+      "p1_alpha": [0.1],
+      "p3_multiplier": [1]
+    }
+  },
+   "FollowTheLeader": {
+    "grid_a": {
+    }
+  }
+}

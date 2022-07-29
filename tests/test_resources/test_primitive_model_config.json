@@ -1,0 +1,19 @@
+{
+"Naive": {
+  "grid_a": {}
+},
+"SARIMA": {
+  "grid_a": {
+    "p1_auto_regressive": [
+      1,
+      2
+    ],
+    "p2_integrated": [
+      0
+    ],
+    "p3_moving_average": [
+      0
+    ]
+  }
+}
+}
