@@ -1,15 +1,15 @@
 import pandas as pd
 import re
 from typing import Dict, List, Union
-from weighted_forecast_combiner.forecast_combiner import OptimalForecastCombiner as ForecastCombiner
 from backtest_forecaster.models.primitive_models import AbstractPrimitiveModel
+from backtest_forecaster.models.combiner_models import AbstractCombinerModel
 
 
 def get_primitive_model_weights_all_combiners(
         fit_combiners: Dict[str,
                             Dict[str,
                                  Dict[str,
-                                      Union[AbstractPrimitiveModel, ForecastCombiner]]]],
+                                      Union[AbstractPrimitiveModel, AbstractCombinerModel]]]],
         primitive_model_names: List[str]
         ) -> pd.DataFrame:
     """

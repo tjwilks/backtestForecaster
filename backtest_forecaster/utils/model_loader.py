@@ -1,6 +1,7 @@
 from sklearn.model_selection import ParameterGrid
 from backtest_forecaster.models.primitive_models import AbstractPrimitiveModel, Naive, SARIMA, ExponentialSmoothing
-from weighted_forecast_combiner.forecast_combiner import OptimalForecastCombiner as ForecastCombiner
+from backtest_forecaster.models.combiner_models import AbstractCombinerModel
+from backtest_forecaster.models.combiner_models import AdaptiveHedge, FollowTheLeader
 import inspect
 import re
 from typing import Dict, Union, List
@@ -8,7 +9,7 @@ from typing import Dict, Union, List
 
 def load_models(
         model_config_grids: Dict[str, Dict[str, Union[str, int, float]]]
-        ) -> Dict[str, Union[AbstractPrimitiveModel, ForecastCombiner]]:
+        ) -> Dict[str, Union[AbstractPrimitiveModel, AbstractCombinerModel]]:
     """
     Unpacks model hyper-parameter grids specified in model_config
     into dictionary of all configs
@@ -52,7 +53,7 @@ def get_model_name(
 def get_model(
         model_name: str,
         model_config: Dict[str, Union[str, int, float]]
-       ) -> Union[AbstractPrimitiveModel, ForecastCombiner]:
+       ) -> Union[AbstractPrimitiveModel, AbstractCombinerModel]:
     """
     Initialises model with model name using arguments
     specified as values in model_config
@@ -77,7 +78,7 @@ def get_model(
 
 def check_arguments(
         provided_arguments: List[str],
-        model: Union[AbstractPrimitiveModel, ForecastCombiner]
+        model: Union[AbstractPrimitiveModel, AbstractCombinerModel]
         ) -> None:
     """
     Checks arguments are the same as those required by model

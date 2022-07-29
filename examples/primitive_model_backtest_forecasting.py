@@ -30,13 +30,13 @@ def main():
         time_series_data=time_series_data,
         models=primitive_models,
         min_train_window_len=1,
+        max_train_window_len=24,
         max_windows=13,
     )
     all_primitive_models, primitive_model_forecasts = backtest_forecaster.get_backtest_models_and_forecasts()
     get_hyp_param_df = model_info_extrator.get_hyp_param_df(primitive_models)
-    print(get_hyp_param_df)
-    # primitive_model_forecasts.to_csv(local_data_paths["primitive_model_backtest_forecasts_path"])
-    # get_hyp_param_df.to_csv("examples/example_data/example_hyp_param_df.csv")
+    primitive_model_forecasts.to_csv(local_data_paths["primitive_model_backtest_forecasts_path"])
+    get_hyp_param_df.to_csv("examples/example_data/example_hyp_param_df.csv")
 
 
 if __name__ == '__main__':
