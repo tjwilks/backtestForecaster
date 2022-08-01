@@ -9,6 +9,9 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 class AbstractPrimitiveModel(ABC):
 
+    def __init__(self):
+        self.is_fit = False
+
     @abstractmethod
     def fit(self, y: pd.Series):
         """
@@ -41,6 +44,7 @@ class Naive(AbstractPrimitiveModel):
     def fit(self, y: pd.Series):
         assert len(y) > self.seasonal
         self.stored = np.array(y[-self.seasonal:])
+        self.is_fit = True
 
     def predict(self, h: int) -> pd.Series:
         assert self.stored is not None, "Model must be fitted before prediction!"
@@ -91,6 +95,7 @@ class ExponentialSmoothing(AbstractPrimitiveModel):
                 trend=self.trend_type,
                 initialization_method='estimated'
             ).fit()
+        self.is_fit = True
 
     def predict(self, h: int) -> pd.Series:
         assert self.model is not None, "Model must be fitted before prediction!"
@@ -143,6 +148,7 @@ class SARIMA(AbstractPrimitiveModel):
             enforce_invertibility=False,
             enforce_stationarity=False
         ).fit()
+        self.is_fit = True
 
     def predict(self, h: int) -> pd.Series:
         assert self.model is not None, "Model must be fitted before prediction!"

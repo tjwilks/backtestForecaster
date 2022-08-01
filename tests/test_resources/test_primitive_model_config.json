@@ -15,5 +15,13 @@
       0
     ]
   }
+},
+"ExponentialSmoothing": {
+  "grid_a": {
+    "p1_trend_type": [
+      null
+    ]
+  }
 }
 }
+

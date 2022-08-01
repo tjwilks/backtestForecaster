@@ -110,6 +110,8 @@ class AbstractBacktestForecaster(ABC):
         windows = [
             window for window in windows if len(window.train_index) >= self.min_train_window_len
         ]
+        max_windows = self.max_windows if len(windows) > self.max_windows else len(windows)
+        windows = windows[:max_windows]
         return windows
 
     def _get_model_forecasts_all_windows(
@@ -267,9 +269,9 @@ class CombinerBacktestForecaster(AbstractBacktestForecaster):
         self.max_horizon = max_horizon
         self.min_train_window_len = min_train_window_len
         self.max_train_window_len = max_train_window_len
+        self.max_windows = max_windows
         self.window_index = "predict_from"
         self.windows = self._get_windows()
-        self.max_windows = max_windows
 
     def _get_fit_models(
             self,

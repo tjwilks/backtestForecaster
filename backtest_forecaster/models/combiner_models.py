@@ -8,6 +8,8 @@ from abc import ABC, abstractmethod
 
 class AbstractCombinerModel(ABC):
 
+    def __init__(self):
+        self.is_fit = False
     @abstractmethod
     def fit(self, x):
         """
