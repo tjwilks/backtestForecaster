@@ -18,19 +18,25 @@ class AbstractCombinerModel(ABC):
         :param x: primitive model error data
         """
 
-    @abstractmethod
     def predict(self, x):
         """
-        Predict by combining together forecast data x
+        Predict by combining forecast data x
 
         :param x: primitive model forecast data
         """
+        x_prepared = np.array(x, dtype=float)
+        prediction = (np.array(list(self.weights.values())) *
+                      x_prepared).sum(axis=1)
+        return prediction
 
-    @abstractmethod
     def get_weights(self):
         """
         Get weights from combiner fitting
         """
+        if self.is_fit:
+            return np.array(list(self.weights.values()))
+        else:
+            raise ValueError("Method has not been fit to data yet")
 
 
 class AdaptiveHedge(AbstractCombinerModel):
@@ -67,18 +73,6 @@ class AdaptiveHedge(AbstractCombinerModel):
             f"{exp_losses}, \n {self.weights}"
         self.is_fit = True
 
-    def predict(self, x):
-        x_prepared = np.array(x, dtype=float)
-        prediction = (np.array(list(self.weights.values())) *
-                      x_prepared).sum(axis=1)
-        return prediction
-
-    def get_weights(self):
-        if self.is_fit:
-            return np.array(list(self.weights.values()))
-        else:
-            raise ValueError("Method has not been fit to data yet")
-
 
 class FollowTheLeader(AbstractCombinerModel):
 
@@ -102,15 +96,3 @@ class FollowTheLeader(AbstractCombinerModel):
                         for model, weight
                         in weights.items()}
         self.is_fit = True
-
-    def predict(self, x):
-        x_prepared = np.array(x, dtype=float)
-        prediction = (np.array(list(self.weights.values())) *
-                      x_prepared).sum(axis=1)
-        return prediction
-
-    def get_weights(self):
-        if self.is_fit:
-            return np.array(list(self.weights.values()))
-        else:
-            raise ValueError("Method has not been fit to data yet")
