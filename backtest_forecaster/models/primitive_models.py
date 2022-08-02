@@ -3,7 +3,8 @@ import math
 from typing import List, Optional
 import pandas as pd
 import numpy as np
-from statsmodels.tsa.holtwinters.model import ExponentialSmoothing as smExponentialSmoothing
+from statsmodels.tsa.holtwinters.model import \
+    ExponentialSmoothing as smExponentialSmoothing
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 
@@ -36,9 +37,7 @@ class Naive(AbstractPrimitiveModel):
     """
 
     def __init__(self, seasonal_period: int = None):
-        # If seasonal_period undefined, set to one point before i.e. non-seasonal naive
         self.seasonal = seasonal_period or 1
-        # Stored last points to forecast with
         self.stored: Optional[List] = None
 
     def fit(self, y: pd.Series):
@@ -47,7 +46,7 @@ class Naive(AbstractPrimitiveModel):
         self.is_fit = True
 
     def predict(self, h: int) -> pd.Series:
-        assert self.stored is not None, "Model must be fitted before prediction!"
+        assert self.stored is not None,
         n_repeats = math.ceil(h / self.seasonal)
         repeated = np.repeat(self.stored, n_repeats)
         return np.array(repeated[:h])
@@ -56,10 +55,12 @@ class Naive(AbstractPrimitiveModel):
 class ExponentialSmoothing(AbstractPrimitiveModel):
     """
     Wrapper for statsmodels Exponential smoothing model
-
-    :param trend_type: trend type. None - no trend, 'add' - additive, 'mul' - multiplicative
-    :param seasonal_period: number of seasonal periods. None for no seasonality.
-    :param seasonal_type: seasonal type. None - no seasonality, 'add' - additive, 'mul' - multiplicative
+    :param trend_type: trend type.
+        None - no trend, 'add' - additive, 'mul' - multiplicative
+    :param seasonal_period: number of seasonal periods.
+        None for no seasonality.
+    :param seasonal_type: seasonal type.
+        None - no seasonality, 'add' - additive, 'mul' - multiplicative
     """
 
     def __init__(
@@ -98,7 +99,7 @@ class ExponentialSmoothing(AbstractPrimitiveModel):
         self.is_fit = True
 
     def predict(self, h: int) -> pd.Series:
-        assert self.model is not None, "Model must be fitted before prediction!"
+        assert self.model is not None, "Model must be fitted before prediction"
         return self.model.forecast(h)
 
 
@@ -108,9 +109,11 @@ class SARIMA(AbstractPrimitiveModel):
 
     :param order: ARIMA order, as specified by statsmodels SARIMAX class.
         Default (1, 0, 0).
-    :param seasonal_order: ARIMA seasonal order, as specified by statsmodels SARIMAX class.
-        Default no seasonality. Only one of seasonal_order or order should be provided.
-    :param trend_type: trend type as specified by statsmodels SARIMAX class 'trend' parameter.
+    :param seasonal_order: ARIMA seasonal order, as specified by statsmodels
+        SARIMAX class. Default no seasonality. Only one of seasonal_order or
+        order should be provided.
+    :param trend_type: trend type as specified by statsmodels SARIMAX class
+        'trend' parameter.
     """
 
     def __init__(
@@ -151,5 +154,5 @@ class SARIMA(AbstractPrimitiveModel):
         self.is_fit = True
 
     def predict(self, h: int) -> pd.Series:
-        assert self.model is not None, "Model must be fitted before prediction!"
+        assert self.model is not None, "Model must be fitted before prediction"
         return self.model.forecast(h)
