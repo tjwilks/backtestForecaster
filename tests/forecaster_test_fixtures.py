@@ -43,6 +43,16 @@ class BacktestForecasterTestFixtures:
         return time_series_data, primitive_model_forecasts
 
     @pytest.fixture
+    def load_X_train_test(self, load_train_and_test_series):
+        train_series, test_series = load_train_and_test_series
+        prepare_series = lambda series: series.drop(
+            columns=["predict_from", "date_index", "actuals",
+                     "series_id"]).apply(pd.to_numeric)
+        X_train = prepare_series(train_series)
+        X_test = prepare_series(test_series)
+        return X_train, X_test
+
+    @pytest.fixture
     def load_models(
             self,
             load_config
