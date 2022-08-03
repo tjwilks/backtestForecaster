@@ -49,7 +49,7 @@ class Naive(AbstractPrimitiveModel):
         assert self.is_fit, "Model must be fitted before prediction"
         n_repeats = math.ceil(h / self.seasonal)
         repeated = np.repeat(self.stored, n_repeats)
-        return np.array(repeated[:h])
+        return pd.Series(repeated[:h])
 
 
 class ExponentialSmoothing(AbstractPrimitiveModel):
