@@ -104,6 +104,6 @@ class TestModelInfoExtractor(
         test_required_index = zip(required_index, test_index)
         assert all([test == required
                     for test, required
-                    in test_required_columns]), \
+                    in test_required_index]), \
             "model_info_extractor function get_hyp_param_df returned a " \
             "dataframe with incorrect index values"
