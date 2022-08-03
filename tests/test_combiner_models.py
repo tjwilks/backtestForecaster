@@ -5,7 +5,6 @@ from tests.forecaster_test_fixtures import\
 
 
 class TestAdaptiveHedge(CombinerBacktestForecasterTestFixtures):
-
     def test_fit(self, load_X_train_test):
         X_train, _ = load_X_train_test
         test_adaptive_hedge = AdaptiveHedge(alpha=0.8, multiplier=2)
@@ -80,7 +79,6 @@ class TestFollowTheLeader(CombinerBacktestForecasterTestFixtures):
             3140
         ]
         test_required_prediction = zip(test_prediction, required_prediction)
-        print(test_prediction)
         assert all([
             round(test, 3) == round(required, 3)
             for test, required
