@@ -47,7 +47,7 @@ def main():
     hyp_param_df = model_info_extrator.get_hyp_param_df(combiners)
     combiner_forecasts.to_csv(local_data_paths["combiner_backtest_forecasts_path"])
     primitive_model_weights.to_csv("examples/example_data/example_primitive_model_weights.csv")
-    get_hyp_param_df.to_csv("examples/example_data/example_hyp_param_df.csv")
+    hyp_param_df.to_csv("examples/example_data/example_hyp_param_df.csv")
 
 
 if __name__ == '__main__':
