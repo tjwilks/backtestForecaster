@@ -82,6 +82,46 @@ class AbstractBacktestForecaster(ABC):
 
 class BaseBacktestForecaster(AbstractBacktestForecaster):
 
+    def __init__(
+            self,
+            time_series_data: pd.DataFrame,
+            models: Dict[str, Union[AbstractPrimitiveModel, AbstractCombinerModel]],
+            max_horizon: int,
+            max_train_window_len: int,
+            min_train_window_len: int,
+            max_windows:int,
+            window_index: str
+    ):
+        """
+        :param time_series_data: multiple time series containing a series
+        identifier, date index and actuals collum or multiple forecasts from
+        multiple time series containing a series identifier, date index,
+        predict_from and actuals collum
+
+        :param models: dictionary containing all  models and equivalent model
+        names
+
+        :param max_horizon: maximum horizon to forecast models to
+
+        :param min_train_window_len: minimum length of training data required
+        for window to be used
+
+        :param max_train_window_len: maximum length of training data to be used
+        for every window
+
+        :param max_windows: maximum number of backtest windows to collect
+        primitive model forecasts for
+
+        """
+        self.time_series_data = time_series_data
+        self.models = models
+        self.max_horizon = max_horizon
+        self.min_train_window_len = min_train_window_len
+        self.max_train_window_len = max_train_window_len
+        self.max_windows = max_windows
+        self.window_index = window_index
+        self.windows = self._get_windows()
+
     def get_backtest_models_and_forecasts(self) -> Tuple[
         Dict[str, Dict[pd.Timestamp, Dict[str, Union[AbstractPrimitiveModel, AbstractCombinerModel]]]],
             pd.DataFrame]:
@@ -184,24 +224,30 @@ class PrimitiveModelBacktestForecaster(BaseBacktestForecaster):
         """
         :param time_series_data: multiple time series containing a series
         identifier, date index and actuals collum
+
         :param models: dictionary containing all primitive models and equivalent
         :primitive model names
+
         :param max_horizon: maximum horizon to forecast primitive models to
+
         :param min_train_window_len: minimum length of training data required
         for window to be used
+
         :param max_train_window_len: maximum length of training data to be used
         for every window
+
         :param max_windows: maximum number of backtest windows to collect
         primitive model forecasts for
         """
-        self.time_series_data = time_series_data
-        self.max_horizon = max_horizon
-        self.min_train_window_len = min_train_window_len
-        self.max_train_window_len = max_train_window_len
-        self.max_windows = max_windows
-        self.window_index = "date_index"
-        self.windows = self._get_windows()
-        self.models = models
+        super().__init__(
+            time_series_data=time_series_data,
+            models=models,
+            max_horizon=max_horizon,
+            max_train_window_len=max_train_window_len,
+            min_train_window_len=min_train_window_len,
+            max_windows=max_windows,
+            window_index="date_index"
+        )
 
     def _get_fit_models(
             self,
@@ -279,27 +325,34 @@ class CombinerBacktestForecaster(BaseBacktestForecaster):
         """
         :param forecast_data: multiple forecasts from multiple time series
         containing a series identifier, date index, predict_from and actuals collum
+
         :param models: dictionary containing all combiner models and equivalent
         combiner model names
+
         :param max_horizon: maximum horizon to forecast primitive models to
+
         :param min_train_window_len: minimum length of training data required
         for window to be used
+
         :param max_train_window_len: maximum length of training data to be used
         for every window
+
         :param max_windows: maximum number of backtest windows to collect
         primitive model forecasts for
+
         :param horizon_length: length of horizon of forecasts to use to
         calculate total forecast error for a given predict from
         """
+        super().__init__(
+            time_series_data=forecast_data,
+            models=models,
+            max_horizon=max_horizon,
+            max_train_window_len=max_train_window_len,
+            min_train_window_len=min_train_window_len,
+            max_windows=max_windows,
+            window_index="predict_from"
+        )
         self.horizon_length = horizon_length
-        self.time_series_data = forecast_data
-        self.models = models
-        self.max_horizon = max_horizon
-        self.min_train_window_len = min_train_window_len
-        self.max_train_window_len = max_train_window_len
-        self.max_windows = max_windows
-        self.window_index = "predict_from"
-        self.windows = self._get_windows()
 
     def _get_fit_models(
             self,
