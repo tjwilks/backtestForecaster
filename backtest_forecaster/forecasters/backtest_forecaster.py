@@ -76,6 +76,13 @@ class AbstractBacktestForecaster(ABC):
         Produces forecasts for all models for periods specified for a
         single time series
         """
+    @abstractmethod
+    def _get_train_and_test_series(self, time_series, window):
+        """
+        Extract train and test series from time series based on indexes
+        specified in window
+        """
+
 
 class BaseBacktestForecaster(AbstractBacktestForecaster):
 
@@ -203,6 +210,22 @@ class BaseBacktestForecaster(AbstractBacktestForecaster):
             models_forecasts_backtest_all_windows.append(models_backtest_window)
         models_forecasts_backtest_all_windows = pd.concat(models_forecasts_backtest_all_windows)
         return fit_models_all_windows, models_forecasts_backtest_all_windows
+
+    def _get_fit_models(
+            self,
+            train_series: pd.DatetimeIndex
+    ):
+        raise NotImplementedError("Must override _get_fit_models")
+
+    def _get_forecasts_all_models(
+                self,
+                fit_models: Dict[str, AbstractPrimitiveModel],
+                test_series: pd.DatetimeIndex
+        ) -> pd.DataFrame:
+        raise NotImplementedError("Must override _get_forecasts_all_models")
+
+    def _get_train_and_test_series(self, time_series, window):
+        raise NotImplementedError("Must override _get_train_and_test_series")
 
 
 class PrimitiveModelBacktestForecaster(BaseBacktestForecaster):
