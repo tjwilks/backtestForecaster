@@ -15,76 +15,6 @@ class AbstractBacktestForecaster(ABC):
     """
     Abstract class that defines forecaster interface.
     """
-    @abstractmethod
-    def get_backtest_models_and_forecasts(self) -> Tuple[
-        Dict[str, Dict[pd.Timestamp, Dict[str, Union[AbstractPrimitiveModel, AbstractCombinerModel]]]],
-            pd.DataFrame]:
-        """
-        Gets backtest forecasts for all models for each window of every
-        time-series
-        """
-
-    @abstractmethod
-    def _get_fit_models(
-            self,
-            train_series: pd.DatetimeIndex
-    ) -> Dict[str, Union[AbstractPrimitiveModel, AbstractCombinerModel]]:
-        """
-        Fits all models to training data of a single period
-        of a single time series
-
-        param train_series: training data of a single backtest window
-        of a single time series for models to be fit to.
-
-        returns fit_models: models fit to training data
-        """
-
-    @abstractmethod
-    def _get_forecasts_all_models(
-            self,
-            fit_models: Dict[str, Union[AbstractPrimitiveModel, AbstractCombinerModel]],
-            test_series: pd.DatetimeIndex
-    ) -> pd.DataFrame:
-        """
-        Forecasts all models for a test period of a single backtest window
-        of a single time series
-
-        param fit_models: all models that have already been fit to the
-        training data for the test series specified
-
-        param test_series: test data of a single backtest window
-        of a single time series for a forecast to be produced for
-
-        returns: model forecasts and actuals for a single
-        test period of a single backtest window of a single time
-        series
-        """
-
-    @abstractmethod
-    def _get_windows(self) -> List[Tuple[pd.DatetimeIndex, pd.DatetimeIndex]]:
-        """
-        Generates all possible windows for all time series within
-        time_series_data
-        """
-
-    @abstractmethod
-    def _get_model_forecasts_all_windows(
-            self,
-            time_series: pd.DatetimeIndex
-    ) -> Tuple[Dict[pd.Timestamp, Dict[str, Union[AbstractPrimitiveModel, AbstractCombinerModel]]], pd.DataFrame]:
-        """
-        Produces forecasts for all models for periods specified for a
-        single time series
-        """
-    @abstractmethod
-    def _get_train_and_test_series(self, time_series, window):
-        """
-        Extract train and test series from time series based on indexes
-        specified in window
-        """
-
-
-class BaseBacktestForecaster(AbstractBacktestForecaster):
 
     def __init__(
             self,
@@ -126,6 +56,50 @@ class BaseBacktestForecaster(AbstractBacktestForecaster):
         self.window_index = window_index
         self.windows = self._get_windows()
 
+    def _get_windows(self) -> List[Tuple[pd.DatetimeIndex, pd.DatetimeIndex]]:
+        """
+        Generates all possible windows for all time series within
+        time_series_data
+        """
+        final_index = self.time_series_data[self.window_index].max()
+        first_index = self.time_series_data[self.window_index].min()
+        test_index_starts = pd.date_range(first_index, final_index, freq="MS",
+                                          inclusive="right").tolist()[::-1]
+        get_horizon = lambda test_index_start: (
+            test_index_start + relativedelta(months=+self.max_horizon - 1)
+            if test_index_start + relativedelta(
+                months=+self.max_horizon) <= final_index
+            else final_index
+        )
+        get_train_index_start = lambda test_index_start: (
+            test_index_start - relativedelta(months=+self.max_train_window_len)
+            if (len(pd.date_range(first_index, test_index_start, freq="MS",
+                                  inclusive="left").tolist())
+                > self.max_train_window_len)
+            else first_index
+        )
+        window = namedtuple("Window", "train_index test_index")
+        windows = [
+            window(
+                train_index=pd.date_range(
+                    get_train_index_start(test_index_start), test_index_start,
+                    freq="MS", inclusive="left").tolist(),
+                test_index=pd.date_range(test_index_start,
+                                         get_horizon(test_index_start),
+                                         freq="MS").tolist()
+            )
+            for test_index_start in test_index_starts
+        ]
+        windows = [
+            window for window in windows if
+            len(window.train_index) >= self.min_train_window_len
+        ]
+        max_windows = self.max_windows if len(
+            windows) > self.max_windows else len(windows)
+        windows = windows[:max_windows]
+        return windows
+
+
     def get_backtest_models_and_forecasts(self) -> Tuple[
         Dict[str, Dict[pd.Timestamp, Dict[str, Union[AbstractPrimitiveModel, AbstractCombinerModel]]]],
             pd.DataFrame]:
@@ -150,41 +124,6 @@ class BaseBacktestForecaster(AbstractBacktestForecaster):
             ascending=False
         )
         return all_fit_models, backtest_forecasts
-
-    def _get_windows(self) -> List[Tuple[pd.DatetimeIndex, pd.DatetimeIndex]]:
-        """
-        Generates all possible windows for all time series within
-        time_series_data
-        """
-        final_index = self.time_series_data[self.window_index].max()
-        first_index = self.time_series_data[self.window_index].min()
-        test_index_starts = pd.date_range(first_index, final_index, freq="MS", inclusive="right").tolist()[::-1]
-        get_horizon = lambda test_index_start: (
-            test_index_start + relativedelta(months=+self.max_horizon - 1)
-            if test_index_start + relativedelta(months=+self.max_horizon) <= final_index
-            else final_index
-        )
-        get_train_index_start = lambda test_index_start: (
-            test_index_start - relativedelta(months=+self.max_train_window_len)
-            if (len(pd.date_range(first_index, test_index_start, freq="MS", inclusive="left").tolist())
-                > self.max_train_window_len)
-            else first_index
-        )
-        window = namedtuple("Window", "train_index test_index")
-        windows = [
-            window(
-                train_index=pd.date_range(get_train_index_start(test_index_start), test_index_start,
-                                          freq="MS", inclusive="left").tolist(),
-                test_index=pd.date_range(test_index_start, get_horizon(test_index_start), freq="MS").tolist()
-            )
-            for test_index_start in test_index_starts
-        ]
-        windows = [
-            window for window in windows if len(window.train_index) >= self.min_train_window_len
-        ]
-        max_windows = self.max_windows if len(windows) > self.max_windows else len(windows)
-        windows = windows[:max_windows]
-        return windows
 
     def _get_model_forecasts_all_windows(
             self,
@@ -211,24 +150,52 @@ class BaseBacktestForecaster(AbstractBacktestForecaster):
         models_forecasts_backtest_all_windows = pd.concat(models_forecasts_backtest_all_windows)
         return fit_models_all_windows, models_forecasts_backtest_all_windows
 
+    @abstractmethod
+    def _get_train_and_test_series(self, time_series, window):
+        """
+        Extract train and test series from time series based on indexes
+        specified in window
+        """
+
+    @abstractmethod
+    def _get_forecasts_all_models(
+            self,
+            fit_models: Dict[
+                str, Union[AbstractPrimitiveModel, AbstractCombinerModel]],
+            test_series: pd.DatetimeIndex
+    ) -> pd.DataFrame:
+        """
+        Forecasts all models for a test period of a single backtest window
+        of a single time series
+
+        param fit_models: all models that have already been fit to the
+        training data for the test series specified
+
+        param test_series: test data of a single backtest window
+        of a single time series for a forecast to be produced for
+
+        returns: model forecasts and actuals for a single
+        test period of a single backtest window of a single time
+        series
+        """
+
+    @abstractmethod
     def _get_fit_models(
             self,
             train_series: pd.DatetimeIndex
-    ):
-        raise NotImplementedError("Must override _get_fit_models")
+    ) -> Dict[str, Union[AbstractPrimitiveModel, AbstractCombinerModel]]:
+        """
+        Fits all models to training data of a single period
+        of a single time series
 
-    def _get_forecasts_all_models(
-                self,
-                fit_models: Dict[str, AbstractPrimitiveModel],
-                test_series: pd.DatetimeIndex
-        ) -> pd.DataFrame:
-        raise NotImplementedError("Must override _get_forecasts_all_models")
+        param train_series: training data of a single backtest window
+        of a single time series for models to be fit to.
 
-    def _get_train_and_test_series(self, time_series, window):
-        raise NotImplementedError("Must override _get_train_and_test_series")
+        returns fit_models: models fit to training data
+        """
 
 
-class PrimitiveModelBacktestForecaster(BaseBacktestForecaster):
+class PrimitiveModelBacktestForecaster(AbstractBacktestForecaster):
     """
     Creates backtest of forecasts for primitive models
     """
@@ -269,25 +236,10 @@ class PrimitiveModelBacktestForecaster(BaseBacktestForecaster):
             window_index="date_index"
         )
 
-    def _get_fit_models(
-            self,
-            train_series: pd.DatetimeIndex
-    ) -> Dict[str, AbstractPrimitiveModel]:
-        """
-        Fits all primitive models to training data of a single period of
-        a single time series
-
-        param train_series: training data of a single backtest window
-        of a single time series for models to be fit to.
-
-        returns fit_models: primitive models fit to training data
-        """
-        y_train = np.array(train_series["actuals"], dtype=np.float64)
-        fit_models = dict()
-        for primitive_model_name, primitive_model in self.models.copy().items():
-            primitive_model.fit(y=y_train)
-            fit_models[primitive_model_name] = primitive_model
-        return fit_models
+    def _get_train_and_test_series(self, time_series, window):
+        train_series = time_series.loc[time_series["date_index"].isin(window.train_index), :]
+        test_series = time_series.loc[time_series["date_index"].isin(window.test_index), :]
+        return train_series, test_series
 
     def _get_forecasts_all_models(
             self,
@@ -317,18 +269,33 @@ class PrimitiveModelBacktestForecaster(BaseBacktestForecaster):
             forecast = primitive_model.predict(h=len(test_series))
             primitive_model_forecasts[primitive_model_name] = forecast
         primitive_model_forecasts = pd.DataFrame(
-            data=primitive_model_forecasts, 
+            data=primitive_model_forecasts,
             index=test_series.index
         )
         return primitive_model_forecasts
 
-    def _get_train_and_test_series(self, time_series, window):
-        train_series = time_series.loc[time_series["date_index"].isin(window.train_index), :]
-        test_series = time_series.loc[time_series["date_index"].isin(window.test_index), :]
-        return train_series, test_series
+    def _get_fit_models(
+            self,
+            train_series: pd.DatetimeIndex
+    ) -> Dict[str, AbstractPrimitiveModel]:
+        """
+        Fits all primitive models to training data of a single period of
+        a single time series
+
+        param train_series: training data of a single backtest window
+        of a single time series for models to be fit to.
+
+        returns fit_models: primitive models fit to training data
+        """
+        y_train = np.array(train_series["actuals"], dtype=np.float64)
+        fit_models = dict()
+        for primitive_model_name, primitive_model in self.models.copy().items():
+            primitive_model.fit(y=y_train)
+            fit_models[primitive_model_name] = primitive_model
+        return fit_models
 
 
-class CombinerBacktestForecaster(BaseBacktestForecaster):
+class CombinerBacktestForecaster(AbstractBacktestForecaster):
     """
     Creates backtest of forecasts for combiner models
     """
@@ -375,30 +342,17 @@ class CombinerBacktestForecaster(BaseBacktestForecaster):
         )
         self.horizon_length = horizon_length
 
-    def _get_fit_models(
-            self,
-            train_series: pd.DatetimeIndex
-    ) -> Dict[str, AbstractCombinerModel]:
-        """
-        Fits all combiner models to training data of a single period
-        of a single time series
 
-        param train_series: training data of a single backtest window
-        of a single time series for models to be fit to.
+    def _get_train_and_test_series(self, time_series, window):
+        train_series = time_series[((time_series["predict_from"].isin(window.train_index)) &
+                                   (time_series["date_index"] < window.test_index[0]))]
+        train_series = self._filter_forecast_horizon(train_series, self.horizon_length)
+        train_series = self._replace_forecasts_with_error(train_series)
+        train_series = self._aggregate_forecast_horizon(train_series)
+        test_series = time_series[((time_series["predict_from"] == window.test_index[0]) &
+                                   (time_series["date_index"].isin(window.test_index)))]
+        return train_series, test_series
 
-        returns fit_models: combiner models fit to training data
-        """
-        X_train = train_series.drop(
-            columns=["predict_from", "date_index", "actuals", "series_id"]).apply(pd.to_numeric)
-        y_train = train_series["actuals"]
-        fit_models = dict()
-        for combiner_model_name, combiner_model in self.models.copy().items():
-            combiner_model = copy.copy(combiner_model)
-            combiner_model.fit(
-                x=X_train,
-            )
-            fit_models[combiner_model_name] = combiner_model
-        return fit_models
 
     def _get_forecasts_all_models(
             self,
@@ -433,15 +387,31 @@ class CombinerBacktestForecaster(BaseBacktestForecaster):
         combiner_forecasts = pd.DataFrame(combiner_forecasts, index=test_series.index)
         return combiner_forecasts
 
-    def _get_train_and_test_series(self, time_series, window):
-        train_series = time_series[((time_series["predict_from"].isin(window.train_index)) &
-                                   (time_series["date_index"] < window.test_index[0]))]
-        train_series = self._filter_forecast_horizon(train_series, self.horizon_length)
-        train_series = self._replace_forecasts_with_error(train_series)
-        train_series = self._aggregate_forecast_horizon(train_series)
-        test_series = time_series[((time_series["predict_from"] == window.test_index[0]) &
-                                   (time_series["date_index"].isin(window.test_index)))]
-        return train_series, test_series
+    def _get_fit_models(
+            self,
+            train_series: pd.DatetimeIndex
+    ) -> Dict[str, AbstractCombinerModel]:
+        """
+        Fits all combiner models to training data of a single period
+        of a single time series
+
+        param train_series: training data of a single backtest window
+        of a single time series for models to be fit to.
+
+        returns fit_models: combiner models fit to training data
+        """
+        X_train = train_series.drop(
+            columns=["predict_from", "date_index", "actuals", "series_id"]).apply(pd.to_numeric)
+        y_train = train_series["actuals"]
+        fit_models = dict()
+        for combiner_model_name, combiner_model in self.models.copy().items():
+            combiner_model = copy.copy(combiner_model)
+            combiner_model.fit(
+                x=X_train,
+            )
+            fit_models[combiner_model_name] = combiner_model
+        return fit_models
+
 
     @staticmethod
     def _aggregate_forecast_horizon(
