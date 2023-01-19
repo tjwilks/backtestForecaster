@@ -19,6 +19,15 @@ class AbstractBacktestForecaster(ABC):
     Core backtest forecaster methods shared by all child classes.
     """
     @abstractmethod
+    def get_backtest_models_and_forecasts(self) -> Tuple[
+        Dict[str, Dict[pd.Timestamp, Dict[str, Union[AbstractPrimitiveModel, AbstractCombinerModel]]]],
+            pd.DataFrame]:
+        """
+        Gets backtest forecasts for all models for each window of every
+        time-series
+        """
+
+    @abstractmethod
     def _get_fit_models(
             self,
             train_series: pd.DatetimeIndex
@@ -54,12 +63,31 @@ class AbstractBacktestForecaster(ABC):
         series
         """
 
+    @abstractmethod
+    def _get_windows(self) -> List[Tuple[pd.DatetimeIndex, pd.DatetimeIndex]]:
+        """
+        Generates all possible windows for all time series within
+        time_series_data
+        """
+
+    @abstractmethod
+    def _get_model_forecasts_all_windows(
+            self,
+            time_series: pd.DatetimeIndex
+    ) -> Tuple[Dict[pd.Timestamp, Dict[str, Union[AbstractPrimitiveModel, AbstractCombinerModel]]], pd.DataFrame]:
+        """
+        Produces forecasts for all models for periods specified for a
+        single time series
+        """
+
+class BaseBacktestForecaster(AbstractBacktestForecaster):
+
     def get_backtest_models_and_forecasts(self) -> Tuple[
         Dict[str, Dict[pd.Timestamp, Dict[str, Union[AbstractPrimitiveModel, AbstractCombinerModel]]]],
             pd.DataFrame]:
         """
-        Produces forecasts for all models, for all periods within all
-        time series specified.
+        Gets backtest forecasts for all models for each window of every
+        time-series
         """
         all_fit_models = {}
         backtest_forecasts = []
@@ -140,7 +168,7 @@ class AbstractBacktestForecaster(ABC):
         return fit_models_all_windows, models_forecasts_backtest_all_windows
 
 
-class PrimitiveModelBacktestForecaster(AbstractBacktestForecaster):
+class PrimitiveModelBacktestForecaster(BaseBacktestForecaster):
     """
     Creates backtest of forecasts for primitive models
     """
@@ -234,7 +262,7 @@ class PrimitiveModelBacktestForecaster(AbstractBacktestForecaster):
         return train_series, test_series
 
 
-class CombinerBacktestForecaster(AbstractBacktestForecaster):
+class CombinerBacktestForecaster(BaseBacktestForecaster):
     """
     Creates backtest of forecasts for combiner models
     """
