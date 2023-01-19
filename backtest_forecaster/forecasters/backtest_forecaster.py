@@ -13,10 +13,7 @@ import copy
 
 class AbstractBacktestForecaster(ABC):
     """
-    Abstract base class for class backtest forecaster classes. Contains
-    abstract methods implemented in child classes
-    PrimitiveModelBacktestForecaster and CombinerBacktestForecaster.
-    Core backtest forecaster methods shared by all child classes.
+    Abstract class that defines forecaster interface.
     """
     @abstractmethod
     def get_backtest_models_and_forecasts(self) -> Tuple[
@@ -36,10 +33,10 @@ class AbstractBacktestForecaster(ABC):
         Fits all models to training data of a single period
         of a single time series
 
-        :param train_series: training data of a single backtest window
+        param train_series: training data of a single backtest window
         of a single time series for models to be fit to.
 
-        :returns fit_models: models fit to training data
+        returns fit_models: models fit to training data
         """
 
     @abstractmethod
@@ -52,13 +49,13 @@ class AbstractBacktestForecaster(ABC):
         Forecasts all models for a test period of a single backtest window
         of a single time series
 
-        :param fit_models: all models that have already been fit to the
+        param fit_models: all models that have already been fit to the
         training data for the test series specified
 
-        :param test_series: test data of a single backtest window
+        param test_series: test data of a single backtest window
         of a single time series for a forecast to be produced for
 
-        :returns: model forecasts and actuals for a single
+        returns: model forecasts and actuals for a single
         test period of a single backtest window of a single time
         series
         """
@@ -93,23 +90,23 @@ class BaseBacktestForecaster(AbstractBacktestForecaster):
             window_index: str
     ):
         """
-        :param time_series_data: multiple time series containing a series
-        identifier, date index and actuals collum or multiple forecasts from
+        param time_series_data: multiple time series containing a series
+        identifier, date index and actuals column or multiple forecasts from
         multiple time series containing a series identifier, date index,
-        predict_from and actuals collum
+        predict_from and actuals column
 
-        :param models: dictionary containing all  models and equivalent model
+        param models: dictionary containing all  models and equivalent model
         names
 
-        :param max_horizon: maximum horizon to forecast models to
+        param max_horizon: maximum horizon to forecast models to
 
-        :param min_train_window_len: minimum length of training data required
+        param min_train_window_len: minimum length of training data required
         for window to be used
 
-        :param max_train_window_len: maximum length of training data to be used
+        param max_train_window_len: maximum length of training data to be used
         for every window
 
-        :param max_windows: maximum number of backtest windows to collect
+        param max_windows: maximum number of backtest windows to collect
         primitive model forecasts for
 
         """
@@ -222,21 +219,21 @@ class PrimitiveModelBacktestForecaster(BaseBacktestForecaster):
             max_windows=30
     ):
         """
-        :param time_series_data: multiple time series containing a series
+        param time_series_data: multiple time series containing a series
         identifier, date index and actuals collum
 
-        :param models: dictionary containing all primitive models and equivalent
-        :primitive model names
+        param models: dictionary containing all primitive models and equivalent
+        primitive model names
 
-        :param max_horizon: maximum horizon to forecast primitive models to
+        param max_horizon: maximum horizon to forecast primitive models to
 
-        :param min_train_window_len: minimum length of training data required
+        param min_train_window_len: minimum length of training data required
         for window to be used
 
-        :param max_train_window_len: maximum length of training data to be used
+        param max_train_window_len: maximum length of training data to be used
         for every window
 
-        :param max_windows: maximum number of backtest windows to collect
+        param max_windows: maximum number of backtest windows to collect
         primitive model forecasts for
         """
         super().__init__(
@@ -257,10 +254,10 @@ class PrimitiveModelBacktestForecaster(BaseBacktestForecaster):
         Fits all primitive models to training data of a single period of
         a single time series
 
-        :param train_series: training data of a single backtest window
+        param train_series: training data of a single backtest window
         of a single time series for models to be fit to.
 
-        :returns fit_models: primitive models fit to training data
+        returns fit_models: primitive models fit to training data
         """
         y_train = np.array(train_series["actuals"], dtype=np.float64)
         fit_models = dict()
@@ -278,13 +275,13 @@ class PrimitiveModelBacktestForecaster(BaseBacktestForecaster):
         Forecasts all primitive models for a test period of a single
         backtest window of a single time series
 
-        :param fit_models: all primitive models that have already been 
+        param fit_models: all primitive models that have already been
         fit to the training data for the test series specified
 
-        :param test_series: test data of a single backtest window
+        param test_series: test data of a single backtest window
         of a single time series for a forecast to be produced for
 
-        :returns: primitive model forecasts and actuals for a single
+        returns: primitive model forecasts and actuals for a single
         test period of a single backtest window of a single time
         series
         """
@@ -324,23 +321,24 @@ class CombinerBacktestForecaster(BaseBacktestForecaster):
     ):
         """
         :param forecast_data: multiple forecasts from multiple time series
-        containing a series identifier, date index, predict_from and actuals collum
+        containing a series identifier, date index, predict_from and actuals
+        column
 
-        :param models: dictionary containing all combiner models and equivalent
+        param models: dictionary containing all combiner models and equivalent
         combiner model names
 
-        :param max_horizon: maximum horizon to forecast primitive models to
+        param max_horizon: maximum horizon to forecast primitive models to
 
-        :param min_train_window_len: minimum length of training data required
+        param min_train_window_len: minimum length of training data required
         for window to be used
 
-        :param max_train_window_len: maximum length of training data to be used
+        param max_train_window_len: maximum length of training data to be used
         for every window
 
-        :param max_windows: maximum number of backtest windows to collect
+        param max_windows: maximum number of backtest windows to collect
         primitive model forecasts for
 
-        :param horizon_length: length of horizon of forecasts to use to
+        param horizon_length: length of horizon of forecasts to use to
         calculate total forecast error for a given predict from
         """
         super().__init__(
@@ -362,10 +360,10 @@ class CombinerBacktestForecaster(BaseBacktestForecaster):
         Fits all combiner models to training data of a single period
         of a single time series
 
-        :param train_series: training data of a single backtest window
+        param train_series: training data of a single backtest window
         of a single time series for models to be fit to.
 
-        :returns fit_models: combiner models fit to training data
+        returns fit_models: combiner models fit to training data
         """
         X_train = train_series.drop(
             columns=["predict_from", "date_index", "actuals", "series_id"]).apply(pd.to_numeric)
@@ -388,13 +386,13 @@ class CombinerBacktestForecaster(BaseBacktestForecaster):
         Forecasts all combiner models for a test period of a single
         backtest window of a single time series
 
-        :param fit_models: all combiner models that have already been fit to the
+        param fit_models: all combiner models that have already been fit to the
         training data for the test series specified
 
-        :param test_series: test data of a single backtest window
+        param test_series: test data of a single backtest window
         of a single time series for a forecast to be produced for
 
-        :returns: combiner model forecasts and actuals for a single
+        returns: combiner model forecasts and actuals for a single
         test period of a single backtest window of a single time
         series
         """
@@ -430,8 +428,9 @@ class CombinerBacktestForecaster(BaseBacktestForecaster):
         Aggregates all time points of forecasts over a given horizon length
         to a single time point
 
-        :param forecast_data: data containing forecasts to aggregated
-        :param horizon_length: length of horizon to use in aggregation
+        param forecast_data: data containing forecasts to aggregated
+
+        param horizon_length: length of horizon to use in aggregation
         """
         forecast_data = forecast_data.drop(["date_index", "horizon"], axis=1)
         time_series_data = forecast_data.groupby(
