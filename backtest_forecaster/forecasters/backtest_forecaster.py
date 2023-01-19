@@ -346,9 +346,19 @@ class CombinerBacktestForecaster(AbstractBacktestForecaster):
     def _get_train_and_test_series(self, time_series, window):
         train_series = time_series[((time_series["predict_from"].isin(window.train_index)) &
                                    (time_series["date_index"] < window.test_index[0]))]
-        train_series = self._filter_forecast_horizon(train_series, self.horizon_length)
-        train_series = self._replace_forecasts_with_error(train_series)
-        train_series = self._aggregate_forecast_horizon(train_series)
+        train_series["horizon"] = round(
+           (train_series['date_index'] - train_series['predict_from']) / np.timedelta64(1, 'M')
+        ).astype(int) + 1
+        train_series = train_series[train_series["horizon"] <= self.horizon_length]
+        models = train_series.drop(columns=["predict_from", "date_index", "actuals", "horizon", "series_id"]).columns
+        for model in models:
+            train_series[model] = abs(train_series[model] - train_series["actuals"])
+        train_series = train_series.drop(["date_index", "horizon"], axis=1)
+        train_series = train_series.groupby(
+            by=["series_id", "predict_from"],
+            as_index=False).sum()
+        train_series["date_index"] = train_series["predict_from"]
+
         test_series = time_series[((time_series["predict_from"] == window.test_index[0]) &
                                    (time_series["date_index"].isin(window.test_index)))]
         return train_series, test_series
@@ -411,38 +421,3 @@ class CombinerBacktestForecaster(AbstractBacktestForecaster):
             )
             fit_models[combiner_model_name] = combiner_model
         return fit_models
-
-
-    @staticmethod
-    def _aggregate_forecast_horizon(
-            forecast_data: pd.DataFrame,
-    ) -> pd.DataFrame:
-        """
-        Aggregates all time points of forecasts over a given horizon length
-        to a single time point
-
-        param forecast_data: data containing forecasts to aggregated
-
-        param horizon_length: length of horizon to use in aggregation
-        """
-        forecast_data = forecast_data.drop(["date_index", "horizon"], axis=1)
-        time_series_data = forecast_data.groupby(
-            by=["series_id", "predict_from"],
-            as_index=False).sum()
-        time_series_data["date_index"] = time_series_data["predict_from"]
-        return time_series_data
-
-    @staticmethod
-    def _filter_forecast_horizon(forecast_data, horizon_length):
-        forecast_data["horizon"] = round(
-           (forecast_data['date_index'] - forecast_data['predict_from']) / np.timedelta64(1, 'M')
-        ).astype(int) + 1
-        forecast_data = forecast_data[forecast_data["horizon"] <= horizon_length]
-        return forecast_data
-
-    @staticmethod
-    def _replace_forecasts_with_error(train_series):
-        models = train_series.drop(columns=["predict_from", "date_index", "actuals", "horizon", "series_id"]).columns
-        for model in models:
-            train_series[model] = abs(train_series[model] - train_series["actuals"])
-        return train_series
