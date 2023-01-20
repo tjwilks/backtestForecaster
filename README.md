@@ -1,9 +1,9 @@
 # BacktestForecaster 
-BacktestForecaster is a python API for the purpose of backtesting of 
-time-series forecasting models. It provides the ability for users to easily 
-produce forecasts for a pre-specified set of models for multiple cross 
-validation windows across multiple time series. The resulting forecasts 
-can then be compared to real values to get a backtest of model errors over time.
+BacktestForecaster is a python API for backtesting time-series forecasting 
+models. It provides the ability for users to easily produce forecasts for a 
+pre-specified set of models for multiple cross validation windows across 
+multiple time series. The resulting forecasts can then be compared to real 
+values to get a backtest of model errors over time.
 
 BacktestForecaster currently supports both primitive models that train on 
 original time-series values (e.g. ARIMA models) and combiner models that 
