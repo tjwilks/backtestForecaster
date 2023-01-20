@@ -5,3 +5,5 @@ WORKDIR /backtest_forecaster
 RUN pip install -r requirements.txt
 RUN python setup.py develop
 COPY . /backtest_forecaster
+RUN pytest tests
+
