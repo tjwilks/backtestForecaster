@@ -1,4 +1,3 @@
-import tensorflow as tf
 import pandas as pd
 import configparser
 import sys
@@ -51,5 +50,4 @@ def main():
 
 
 if __name__ == '__main__':
-    with tf.device('/cpu:0'):
-        main()
+    main()
