@@ -64,6 +64,11 @@ class TestExponentialSmoothing(PrimitiveModelBacktestForecasterTestFixtures):
             3140.924483,
         ]
         test_required_prediction = zip(test_prediction, required_prediction)
+        print([
+            (round(test, 3), round(required, 3))
+            for test, required
+            in test_required_prediction
+        ])
         assert all([
             round(test, 3) == round(required, 3)
             for test, required
